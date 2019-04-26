@@ -1,31 +1,47 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <ArdusatSDK.h>
+#include <math.h>
 
-#include <stdio.h>
+Display display;
+int demodelay=2000;
+ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 
-int main()
-{
-    int numOfassign = 0;                  
-    float sumOfpossible =0;               //declaration of variables  
-    float sumOfearned = 0;  
-    float averagedgrade =0;
- 
-    printf("Enter the number of assignments: \n"); // propmts user for amount of grades and sets entered value equal to the variable
-        scanf("%d", &numOfassign);  
-        float earned[numOfassign];
-        float possible[numOfassign];  //variables declared and assigned arrys with spots equal to entered number of grades
-        
-        for(int i=0; i<numOfassign; ++i){
-            printf("Enter earned points %d:\n", (i+1));
-            scanf("%f", &earned[i]);
-            printf("enter possible points %d:\n", (i+1));      // loop propmting user for points earned and possible seting the equalto the respective variables
-            scanf("%f", &possible[i]);
-        }   
-        for(int i=0; i<numOfassign; ++i ){
-        sumOfearned += earned[i];           //lopp to sum the points earned and points possble
-        sumOfpossible += possible[i];
-        }  
-        averagedgrade = ( sumOfearned/sumOfpossible)*100; // usses summed varibles and divides to give deccimal and *100 for percent
-        
-        printf("The average grade is %lf.\n", averagedgrade); // prints the ratio of sum earned to sum possible
-    
-        return 0; //error code
-    }
+Acceleration accel;
+float gForce;
+int sensorReading;
+
+void printCentered(const char* text, int line, int lineHeight = 12) {
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor(display.width()/2 - w/2, line * lineHeight);
+  display.print(text);
+}
+void printMessage2_P(PGM_P text1, PGM_P text2) {
+  display.clearDisplay();
+  printCentered_P(text1, 0);
+  printCentered_P(text2, 1);
+  display.display();
+void setup() {
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    serialConnection.begin(9600);
+  accel.begin();
+
+  serialConnection.println("");
+}
+float getGravForce(Acceleration* a) {
+  return sqrt(sq((*a).x)+sq((*a).y)+sq((*a).z)) / 9.8;
+}
+
+
+void loop() {
+accel.read();
+        gForce = getGravForce(&accel);
+        if (gForce > 0.1 && gForce < 4.0){
+         display.display(safe);
+        }
+}
+
